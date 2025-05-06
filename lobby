@@ -1,0 +1,162 @@
+import tkinter as tk
+from tkinter import font, messagebox
+
+# Constants
+WIDTH, HEIGHT = 1240, 600
+WHITE = "#ffffff"
+GRAY1 = "#0c0c0c"
+GRAY2 = "#323232"
+GRAY3 = "#6a6a6a"
+GRAY4 = "#969696"
+BLACK = "#000000"
+RED = "#d70f36"
+GREEN = "#59b101"
+BLUE = "#2141c6"
+ORANGE = "#e35b03"
+LIGHTBLUE = "#0f9bd7"
+YELLOW = "#e39f01"
+PINK = "#af288a"
+
+# Main window
+root = tk.Tk()
+root.title("Tetris Lobby")
+root.geometry(f"{WIDTH}x{HEIGHT}")
+root.configure(bg=BLACK)
+
+# Fonts
+TITLE_FONT = font.Font(family="Helvetica", size=36, weight="bold")
+LABEL_FONT = font.Font(family="Helvetica", size=20, weight="bold")
+SMALL_FONT = font.Font(family="Helvetica", size=14, weight="normal")
+
+screen_state = "name_input"
+player_name = tk.StringVar()
+chat_input = tk.StringVar()
+chat_messages = []
+game_mode = tk.StringVar(value="")
+difficulty = tk.StringVar(value="Easy")
+difficulties = ["Easy", "Medium", "Hard"]
+
+# Layout manager
+frames = {}
+
+def switch_frame(name):
+    for f in frames.values():
+        f.pack_forget()
+    frames[name].pack(fill="both", expand=True)
+
+# Name input screen
+def create_name_input():
+    frame = tk.Frame(root, bg=BLACK)
+    frames["name_input"] = frame
+
+    tk.Label(frame, text="Enter Your Name", font=TITLE_FONT, fg=WHITE, bg=BLACK).pack(pady=60)
+    entry = tk.Entry(frame, textvariable=player_name, font=LABEL_FONT, width=20, justify="center", fg=WHITE, bg=GRAY1,
+                     insertbackground=WHITE, highlightbackground=WHITE, highlightcolor=WHITE)
+    entry.pack(pady=20)
+    entry.focus_set()
+
+    def go_next():
+        if player_name.get().strip():
+            switch_frame("mode_select")
+
+    entry.bind("<Return>", lambda e: go_next())
+
+# Mode selection screen
+def create_mode_select():
+    frame = tk.Frame(root, bg=BLACK)
+    frames["mode_select"] = frame
+
+    tk.Label(frame, text="Select Game Mode", font=TITLE_FONT, fg=WHITE, bg=BLACK).pack(pady=50)
+    tk.Button(frame, text="Single Player", font=SMALL_FONT, bg=GREEN, fg=WHITE,
+              command=lambda: [game_mode.set("Single"), switch_frame("difficulty_select")],
+              width=20, height=2).pack(pady=10)
+    tk.Button(frame, text="Multiplayer", font=SMALL_FONT, bg=BLUE, fg=WHITE,
+              command=lambda: [game_mode.set("Multi"), switch_frame("waiting_room")],
+              width=20, height=2).pack(pady=10)
+    tk.Button(frame, text="Back", font=SMALL_FONT, bg=RED, fg=WHITE,
+              command=lambda: switch_frame("name_input")).pack(pady=30)
+
+# Difficulty selection screen
+def create_difficulty_select():
+    frame = tk.Frame(root, bg=BLACK)
+    frames["difficulty_select"] = frame
+
+    tk.Label(frame, text="Choose Difficulty", font=TITLE_FONT, fg=WHITE, bg=BLACK).pack(pady=40)
+
+    dropdown = tk.OptionMenu(frame, difficulty, *difficulties)
+    dropdown.config(font=LABEL_FONT, bg=BLUE, fg=WHITE, width=10)
+    dropdown.pack(pady=20)
+
+    tk.Button(frame, text="Next", font=SMALL_FONT, bg=GREEN, fg=WHITE,
+              command=lambda: switch_frame("lobby")).pack(pady=10)
+    tk.Button(frame, text="Back", font=SMALL_FONT, bg=RED, fg=WHITE,
+              command=lambda: switch_frame("mode_select")).pack(pady=10)
+
+# Lobby screen
+def create_lobby():
+    frame = tk.Frame(root, bg=BLACK)
+    frames["lobby"] = frame
+
+    tk.Label(frame, textvariable=tk.StringVar(value="Player: "), font=SMALL_FONT,
+             fg=WHITE, bg=BLACK).place(x=10, y=10)
+
+    title = tk.Label(frame, text="TETRIS", font=TITLE_FONT, fg=WHITE, bg=BLACK)
+    title.pack(pady=60)
+
+    def btn_click(text):
+        if text == "Quit":
+            root.destroy()
+        else:
+            print(f"{text} clicked")
+
+    for text, color in [("Start Game", GREEN), ("Options", GRAY3), ("Settings", GRAY2), ("Quit", RED)]:
+        tk.Button(frame, text=text, font=SMALL_FONT, bg=color, fg=WHITE,
+                  command=lambda t=text: btn_click(t),
+                  width=20, height=2).pack(pady=5)
+
+    tk.Button(frame, text="Back", font=SMALL_FONT, bg=RED, fg=WHITE,
+              command=lambda: switch_frame("mode_select")).place(x=10, y=50)
+
+# Waiting room screen
+def create_waiting_room():
+    frame = tk.Frame(root, bg=BLACK)
+    frames["waiting_room"] = frame
+
+    label = tk.Label(frame, text="Waiting for another player...", font=LABEL_FONT, fg=WHITE, bg=BLACK)
+    label.pack(pady=30)
+
+    chat_frame = tk.Frame(frame, bg=BLACK)
+    chat_frame.pack(pady=20)
+
+    chat_log = tk.Text(chat_frame, width=70, height=15, font=SMALL_FONT, bg=GRAY1, fg=WHITE)
+    chat_log.pack()
+    chat_log.config(state='disabled')
+
+    entry = tk.Entry(frame, textvariable=chat_input, font=SMALL_FONT, width=70, fg=WHITE, bg=GRAY2,
+                     insertbackground=WHITE)
+    entry.pack(pady=10)
+
+    def send_message(event=None):
+        msg = chat_input.get().strip()
+        if msg:
+            chat_log.config(state='normal')
+            chat_log.insert('end', f"You: {msg}\n")
+            chat_log.config(state='disabled')
+            chat_log.see('end')
+            chat_input.set("")
+
+    entry.bind("<Return>", send_message)
+
+    tk.Button(frame, text="Back", font=SMALL_FONT, bg=RED, fg=WHITE,
+              command=lambda: switch_frame("mode_select")).pack(pady=10)
+
+# Create all screens
+create_name_input()
+create_mode_select()
+create_difficulty_select()
+create_lobby()
+create_waiting_room()
+
+# Start with name input
+switch_frame("name_input")
+root.mainloop()
